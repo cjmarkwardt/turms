@@ -7,26 +7,38 @@ public interface IServer : IMultiDisposable
 
 public class Server : IServer
 {
-    public Server(IConnector connector, IServerHandler handler)
+    public static async ValueTask<Failable<Server>> Create(IHoster hoster, IServerHandler handler, CancellationToken cancellation = default)
     {
-        this.handler = new ListenerHandler();
-        this.handler.Linked.Subscribe(OnLinked);
+        Server server = new(handler);
+
+        ListenerHandler listenerHandler = new();
+
+        Failable<IListener> tryHost = await hoster.Host(listenerHandler, cancellation);
+        if (tryHost.Failure != null)
+        {
+            return tryHost.Failure;
+        }
+
+        server.listener = tryHost.Result;
+        return server;
+    }
+    
+    private Server(IServerHandler handler)
+    {
+        this.handler = handler;
     }
 
-    private readonly IListenerHandler handler;
+    private readonly IServerHandler handler;
 
-    private readonly Subject<IConnectionRequest> connected = new();
-    public IObservable<IConnectionRequest> Connected => connected;
+    private IListener listener = null!;
+
+    public IObservable<IConnectionRequest> Connected => handler.Connected;
 
     public void Dispose()
-    {
-        throw new NotImplementedException();
-    }
+        => listener.Dispose();
 
-    public ValueTask DisposeAsync()
-    {
-        throw new NotImplementedException();
-    }
+    public async ValueTask DisposeAsync()
+        => await listener.DisposeAsync();
 
     private void OnLinked(ILinkRequest request)
     {
@@ -42,43 +54,10 @@ public class Server : IServer
 
         private readonly ILinkRequest request;
 
-        public IConnection Accept(IConnectionHandler handler)
+        public IConnection Accept(IConnectionProcessor processor, IConnectionHandler handler)
             => request.Accept();
 
         public void Reject()
             => request.Reject();
-    }
-
-    private class Connection : IConnection
-    {
-        public Connection(ILink link, IConnectionHandler handler)
-        {
-            this.link = link;
-            this.handler = handler;
-        }
-
-        private readonly ILink link;
-        private readonly IConnectionHandler handler;
-
-        public string? Disconnection => link.Break;
-
-        public IObservable<string> Disconnected => throw new NotImplementedException();
-
-        public IObservable<object> ReceivedMessage => throw new NotImplementedException();
-
-        public void Send(object message, bool reliable = true)
-        {
-            
-        }
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

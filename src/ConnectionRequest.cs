@@ -2,6 +2,6 @@ namespace Markwardt.Turms;
 
 public interface IConnectionRequest
 {
-    IConnection Accept(IConnectionHandler handler);
+    IConnection Accept(IConnectionProcessor processor, IConnectionHandler handler);
     void Reject();
 }

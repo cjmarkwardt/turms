@@ -1,6 +1,18 @@
 namespace Markwardt.Turms;
 
-public interface ISerializer
+public interface IConnectionProcessor
 {
-    IEnumerable<byte[]> Serialize(object message);
+    IStream<ReadOnlyMemory<byte>> Output { get; }
+    IStream<object> Input { get; }
+
+    void Send(object message);
+    void Receive(ReadOnlyMemory<byte> block);
+
+    interface IStream<T>
+    {
+        int Priority { get; }
+        bool HasNext { get; }
+
+        T Next();
+    }
 }

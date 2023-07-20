@@ -7,6 +7,6 @@ public interface IConnector
 
 public static class ConnectorUtils
 {
-    public static async ValueTask<Failable<IConnection>> Connect(IConnectionHandler handler, CancellationToken cancellation = default)
-        => null!;
+    public static async ValueTask<Failable<IConnection>> Connect(this IConnector connector, IConnectionProcessor processor, IConnectionHandler handler, CancellationToken cancellation = default)
+        => (await Connection.Create(connector, processor, handler, cancellation)).Cast<IConnection>();
 }
