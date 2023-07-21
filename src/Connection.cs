@@ -41,8 +41,8 @@ public class Connection : IConnection
     private bool isStartInitiated;
     private bool isStarted;
 
-    private readonly ObservableValue<string> disconnection = new();
-    public IObservableValue<string> Disconection => disconnection;
+    private readonly Value<string?> disconnection = new(null);
+    public IReadOnlyValue<string?> Disconection => disconnection;
     
     private readonly Subject<object> receivedMessage = new();
     public IObservable<object> ReceivedMessage => receivedMessage;
@@ -59,10 +59,10 @@ public class Connection : IConnection
         {
             isStartInitiated = true;
 
-            if (link.Disconnection.Value == null)
+            if (link.Disconnection.Get() == null)
             {
-                link.Disconn
-                
+                link.Disconnection.ob
+
                 while (processor.Input.HasNext)
                 {
                     Receive();
@@ -70,8 +70,7 @@ public class Connection : IConnection
             }
             else
             {
-                disconnection.Set(link.Disconnection);
-                disconnected.OnNext(link.Disconnection);
+                disconnection.Set(link.Disconnection.Get());
             }
             
             isStarted = true;
@@ -90,7 +89,7 @@ public class Connection : IConnection
     {
         if (processor.Input.HasNext)
         {
-            handler.TriggerReceivedMessage(processor.Input.Next());
+            receivedMessage.OnNext(processor.Input.Next());
         }
     }
 
